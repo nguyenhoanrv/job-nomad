@@ -1,4 +1,4 @@
-job "test3" {
+job "test27" {
   datacenters = ["dc1"]
 
   group "db" {
@@ -8,8 +8,8 @@ job "test3" {
   
     service {
       name = "postgres"
-      port = "5432"
-
+      port = 5432
+      
       connect {
         sidecar_service {}
       }
@@ -18,13 +18,12 @@ job "test3" {
     task "postgres" {
       driver = "docker"
       config {
-        image = "postgres"
+        image = "postgres:12.7-alpine"
       }
 
       env {
-        POSTGRES_USER = "postgres"
-        POSTGRES_PASSWORD="postgres"
-        POSTGRES_DATABASE = "user-db"
+        POSTGRES_USER = "root"
+        POSTGRES_PASSWORD=""
       }
 
       resources {
@@ -34,21 +33,21 @@ job "test3" {
     }
   }
 
-  group "frontend" {
+  group "authen" {
     count = 1
 
     network {
       mode = "bridge"
 
       port "ingress" {
-        static =   80 
+        static =   3000 
         to     = 3000
       }
     }
 
     service {
-      name = "nomadrepofe"
-      port = "8000"
+      name = "authen"
+      port = "3000"
 
       connect {
         sidecar_service {
@@ -62,8 +61,15 @@ job "test3" {
       }
     }
 
-    task "frontend" {
+    task "authen" {
       driver = "docker"
+      env {
+        DB_HOST = "${NOMAD_UPSTREAM_IP_postgres}" 
+        DB_PORT = "${NOMAD_UPSTREAM_PORT_postgres}"
+        DB_USERNAME = "root"
+        DB_PASSWORD=""
+        DB_DATABASE="authen"
+      }
       config {
         image = "registry.gitlab.com/nguyenhoanrv/test-authen:latest"
         auth {
@@ -71,50 +77,12 @@ job "test3" {
           password = "hoanprono1"
           server_address  = "registry.gitlab.com"
         }
-        // entrypoint = ["docker", "run", "-p", "5432:5432", "registry.gitlab.com/nguyenhoanrv/test-authen:latest"]
       }
 
       resources {
         cpu    = 2000
-        memory =  500
+        memory =  1000
       }
     }
-
-//      task "initdb" {
-//       lifecycle {
-//         hook = "prestart"
-//         sidecar = false
-//       }
-
-//       driver = "docker"
-//       config {
-//         image   = "registry.gitlab.com/nguyenhoanrv/test-authen:latest"
-//         auth {
-//           username = "nguyenhoanrv"
-//           password = "hoanprono1"
-//           server_address  = "registry.gitlab.com"
-//         }
-//         command = "/bin/bash"
-//         args    = ["-c", "chmod +x local/initdb.sh && exec local/initdb.sh"]
-//       }
-//       template {
-//         data = <<EOH
-// #!/bin/sh
-// echo "--> Waiting for envoy to start..."
-// sleep 15
-// # Use alloc index as jitter
-// sleep {{ env "NOMAD_ALLOC_INDEX" }}
-// echo "--> Initializing database..."
-// PGPASSWORD=postgres psql -h localhost -U postgres -c 'CREATE DATABASE user-dbs;' || echo "Error code: $?"
-// echo "==> Database initialized."
-// EOH
-//         destination   = "local/initdb.sh"
-//         change_mode   = "noop"
-//       }
-//       resources {
-//         cpu    =  500
-//         memory =  500
-//       }
-//     }
   }
 }
