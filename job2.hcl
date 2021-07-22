@@ -1,7 +1,8 @@
-job "test27" {
+job "test15" {
   datacenters = ["dc1"]
 
   group "db" {
+    count = 1
     network {
       mode = "bridge"
     }
@@ -17,24 +18,25 @@ job "test27" {
 
     task "postgres" {
       driver = "docker"
+      env {
+        POSTGRES_PASSWORD="postgres"
+      }
       config {
         image = "postgres:12.7-alpine"
       }
 
-      env {
-        POSTGRES_USER = "root"
-        POSTGRES_PASSWORD=""
-      }
+      
 
-      resources {
-        cpu    = 2000
-        memory = 2000
+     resources {
+        cpu = 1000
+        memory = 1024
+        
       }
     }
   }
 
   group "authen" {
-    count = 1
+    count = 2
 
     network {
       mode = "bridge"
@@ -54,7 +56,7 @@ job "test27" {
           proxy {
             upstreams {
               destination_name = "postgres"
-              local_bind_port  = 5432
+              local_bind_port  = 5433
             }
           }
         }
@@ -64,11 +66,12 @@ job "test27" {
     task "authen" {
       driver = "docker"
       env {
-        DB_HOST = "${NOMAD_UPSTREAM_IP_postgres}" 
+        DB_HOST = "${NOMAD_UPSTREAM_IP_postgres}"
         DB_PORT = "${NOMAD_UPSTREAM_PORT_postgres}"
         DB_USERNAME = "root"
-        DB_PASSWORD=""
-        DB_DATABASE="authen"
+        DB_PASSWORD="postgres"
+        DB_DATABASE="authen1"
+        DB_CONNECTION="postgres"
       }
       config {
         image = "registry.gitlab.com/nguyenhoanrv/test-authen:latest"
@@ -80,9 +83,17 @@ job "test27" {
       }
 
       resources {
-        cpu    = 2000
+        cpu    = 4000
         memory =  1000
       }
+      //  restart {
+      //   attempts = 10
+      //   interval = "5m"
+      //   delay = "5s"
+      //   mode = "delay"
+      // }
     }
+      
   }
+
 }
