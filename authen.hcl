@@ -1,4 +1,4 @@
-job "test15" {
+job "authen" {
   datacenters = ["dc1"]
 
   group "db" {
@@ -19,13 +19,13 @@ job "test15" {
     task "postgres" {
       driver = "docker"
       env {
+        POSTGRES_USER="root"
         POSTGRES_PASSWORD="postgres"
+        POSTGRES_DB="authen"
       }
       config {
         image = "postgres:12.7-alpine"
       }
-
-      
 
      resources {
         cpu = 1000
@@ -36,27 +36,23 @@ job "test15" {
   }
 
   group "authen" {
-    count = 2
-
+    count = 1
     network {
       mode = "bridge"
-
-      port "ingress" {
-        static =   3000 
-        to     = 3000
+      port "authen-api" {
+        to = 4000
       }
     }
 
     service {
       name = "authen"
-      port = "3000"
-
+      port = "authen-api"
       connect {
         sidecar_service {
           proxy {
             upstreams {
               destination_name = "postgres"
-              local_bind_port  = 5433
+              local_bind_port  = 5432
             }
           }
         }
@@ -70,7 +66,7 @@ job "test15" {
         DB_PORT = "${NOMAD_UPSTREAM_PORT_postgres}"
         DB_USERNAME = "root"
         DB_PASSWORD="postgres"
-        DB_DATABASE="authen1"
+        DB_DATABASE="authen"
         DB_CONNECTION="postgres"
       }
       config {
@@ -80,6 +76,7 @@ job "test15" {
           password = "hoanprono1"
           server_address  = "registry.gitlab.com"
         }
+        ports = ["authen-api"]
       }
 
       resources {

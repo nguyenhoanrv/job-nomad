@@ -12,7 +12,7 @@ job "nomadrepo" {
       connect {
         sidecar_service {}
       }
-    }
+    } 
 
     task "postgres" {
       driver = "docker"
