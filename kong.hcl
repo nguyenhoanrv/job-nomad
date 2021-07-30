@@ -1,4 +1,4 @@
-job "gateway10" {
+job "gateway14" {
   datacenters = ["dc1"]
 
   group "kong-db" {
@@ -111,7 +111,7 @@ job "gateway10" {
       }
       config {
         image = "kong:latest"
-        volumes = ["/home/hoanbk/Documents/Nomad/certificate:/certificate"]
+        volumes = ["/home/intern-pionero/nomad/job-nomad/certificate:/certificate"]
         ports = ["kong"]
       }
 
@@ -121,25 +121,7 @@ job "gateway10" {
       }
     }
 
-    task "konga" {
-      driver = "docker"
-      env {
-        DB_ADAPTER= "postgres"
-        DB_HOST= "${NOMAD_UPSTREAM_IP_kong-db}"
-        DB_PORT="${NOMAD_UPSTREAM_PORT_kong-db}"
-        DB_USER= "kong"
-        DB_PASSWORD="kong"
-        TOKEN_SECRET= "km1GUr4RkcQD7DewhJPNXrCuZwcKmqjb"
-        DB_DATABASE= "kong-db"
-        NODE_ENV= "development"
-      }
-
-      config {
-        image = "pantsel/konga:next"
-        ports = ["konga"]
-      }
-
-    }
+   
       
   }
 
