@@ -1,59 +1,33 @@
-job "gateway14" {
+job "gateway10" {
   datacenters = ["dc1"]
-
-  group "kong-db" {
-    count = 1
-    network {
-      mode = "bridge"
-    }
-  
-    service {
-      name = "kong-db"
-      port = 5432
-      connect {
-        sidecar_service {}
-      }
-    }
-
-    task "init-db" {
-      driver = "docker"
-      env {
-        POSTGRES_USER="kong"
-        POSTGRES_PASSWORD="kong"
-        POSTGRES_DB="kong-db"
-      }
-      config {
-        image = "postgres:9.6"
-      }
-
-     resources {
-        cpu = 1000
-        memory = 1024
-        
-      }
-    }
-  }
 
   group "kong" {
     count = 1
     network {
       mode = "bridge"
       // port "kong" {}
-      port "konga" {
-        to = 1337
+      port "test1" {
+        // static = 8000
+        to = 8000
+      }
+      port "test2" {
+        to = 8001
+      }
+       port "test3" {
+        to = 8443
+      }
+       port "test4" {
+        to = 8444
       }
     }
-    // volume "certificate" {
-    //   type      = "host"
-    //   source    = "certificate"
-    // }
     service {
       name = "kong"
+      port = "test1"
       connect {
         sidecar_service {
           proxy {
-            upstreams {
-              destination_name = "kong-db"
+             upstreams {
+              destination_name = "kongdb"
               local_bind_port  = 5432
             }
           }
@@ -61,31 +35,34 @@ job "gateway14" {
       }
     }
 
-    // task "kong-migration" {
-    //   driver = "docker"
-    //   env {
-    //       KONG_DATABASE="postgres"
-    //       KONG_PG_DATABASE = "kong-db"
-    //       KONG_PG_HOST= "${NOMAD_UPSTREAM_IP_kong-db}"
-    //       KONG_PG_USER = "kong"
-    //       KONG_PG_PASSWORD = "kong"
-    //   }
-    //   config {
-    //     image = "kong:2.5.0-alpine"
-    //     command = "kong kong migrations bootstrap"
-    //   }
+    task "kong-migration" {
+      lifecycle {
+        hook = "prestart"
+        sidecar = false
+      }
+      driver = "docker"
+      env {
+          KONG_DATABASE="postgres"
+          KONG_PG_DATABASE = "kongdb"
+          KONG_PG_HOST= "${NOMAD_UPSTREAM_IP_kongdb}"
+          KONG_PG_PORT="${NOMAD_UPSTREAM_PORT_kongdb}"
+          KONG_PG_USER = "kong"
+          KONG_PG_PASSWORD = "kong"
+      }
+      config {
+        image = "kong:latest"
+        command = "/bin/bash"
+        args = [
+          "-c",
+          "kong migrations bootstrap"
+        ]
+      }
 
-    //   resources {
-    //     cpu    = 1000
-    //     memory =  500
-    //   }
-      //  restart {
-      //   attempts = 10
-      //   interval = "5m"
-      //   delay = "5s"
-      //   mode = "delay"
-      // }
-    // }
+      resources {
+        cpu    = 1000
+        memory =  600
+      }
+    }
     
     task "kong" {
       driver = "docker"
@@ -93,15 +70,17 @@ job "gateway14" {
       env {
           KONG_PROXY_LISTEN= "0.0.0.0:8000, 0.0.0.0:8443 ssl"
           KONG_ADMIN_LISTEN= "0.0.0.0:8001, 0.0.0.0:8444 ssl"
-          KONG_DATABASE="off"
-          KONG_PROXY_ACCESS_LOG="/dev/stdout"
-          KONG_ADMIN_ACCESS_LOG="/dev/stdout"
-          KONG_PROXY_ERROR_LOG="/dev/stderr"
-          KONG_ADMIN_ERROR_LOG="/dev/stderr" 
-          // KONG_PG_DATABASE = "kong-db"
-          // KONG_PG_HOST= "${NOMAD_UPSTREAM_IP_kong-db}"
-          // KONG_PG_USER = "kong"
-          // KONG_PG_PASSWORD = "kong"
+          // KONG_DATABASE="off"
+          // KONG_DECLARATIVE_CONFIG="/usr/local/kong/declarative/kong.yml"
+          // KONG_PROXY_ACCESS_LOG="/dev/stdout"
+          // KONG_ADMIN_ACCESS_LOG="/dev/stdout"
+          // KONG_PROXY_ERROR_LOG="/dev/stderr"
+          // KONG_ADMIN_ERROR_LOG="/dev/stderr" 
+          KONG_PG_DATABASE = "kongdb"
+          KONG_PG_HOST= "${NOMAD_UPSTREAM_IP_kongdb}"
+          KONG_PG_PORT="${NOMAD_UPSTREAM_PORT_kongdb}"
+          KONG_PG_USER = "kong"
+          KONG_PG_PASSWORD = "kong"
           KONG_SSL = "on"
           KONG_SSL_CERT = "/certificate/cert.pem"
           KONG_SSL_CERT_KEY= "/certificate/key.pem"
@@ -111,18 +90,16 @@ job "gateway14" {
       }
       config {
         image = "kong:latest"
-        volumes = ["/home/intern-pionero/nomad/job-nomad/certificate:/certificate"]
-        ports = ["kong"]
+        volumes = ["/home/hoanbk/Documents/Nomad/certificate:/certificate"]
+        // command="kong migrations bootstrap"
+        ports = ["test2", "test1", "test3", "test4"]
       }
 
       resources {
         cpu    = 1000
-        memory =  500
+        memory =  1000
       }
     }
-
-   
-      
   }
 
 }

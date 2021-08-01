@@ -28,8 +28,8 @@ job "authen" {
       }
 
      resources {
-        cpu = 1000
-        memory = 1024
+        cpu = 200
+        memory = 200
         
       }
     }
@@ -68,6 +68,7 @@ job "authen" {
         DB_PASSWORD="postgres"
         DB_DATABASE="authen"
         DB_CONNECTION="postgres"
+        KONG_GATE_WAY_URL="https://192.168.1.39:21300/"
       }
       config {
         image = "registry.gitlab.com/nguyenhoanrv/test-authen:latest"
@@ -80,8 +81,8 @@ job "authen" {
       }
 
       resources {
-        cpu    = 4000
-        memory =  1000
+        cpu    = 1000
+        memory =  800
       }
       //  restart {
       //   attempts = 10

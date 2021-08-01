@@ -11,13 +11,12 @@ job "frontend" {
     }
     service {
       name = "frontend"
-      port = "web"
       connect {
         sidecar_service {
           proxy {
             upstreams {
-              destination_name = "authen"
-              local_bind_port  = 4000
+              destination_name = "kong"
+              // local_bind_port  = 8000
             }
           }
         }
@@ -27,7 +26,7 @@ job "frontend" {
     task "frontend" {
       driver = "docker"
       env {
-        KONG_URL= "${NOMAD_UPSTREAM_ADDR_authen}"
+        REACT_APP_KONG_URL= "${NOMAD_ADDR_web}"
       }
       config {
         image = "registry.gitlab.com/nguyenhoanrv/test-front-end:latest"
@@ -40,8 +39,8 @@ job "frontend" {
       }
 
       resources {
-        cpu    = 4000
-        memory =  1000
+        cpu    = 800
+        memory =  800
       }
       //  restart {
       //   attempts = 10
